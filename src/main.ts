@@ -1,11 +1,11 @@
 // Add type declaration for jQuery on window object
 declare global {
   interface Window {
-    jQuery: any;
+    $: any;
   }
 }
 
-const $ = window.jQuery;
+const $ = window.$;
 
 $(document).ready(function () {
   console.log("Here we are!");
