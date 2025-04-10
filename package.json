@@ -4,11 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"npm:build-watch\" \"npm:serve-dist\"",
     "build": "tsc && vite build",
+    "build-watch": "vite build --watch",
+    "serve-dist": "serve dist",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/node": "^22.14.0",
+    "concurrently": "^9.1.2",
+    "serve": "^14.2.4",
     "typescript": "~5.7.2",
     "vite": "^6.2.0"
   }
