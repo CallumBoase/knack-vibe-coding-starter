@@ -117,7 +117,7 @@ export function home() {
         }
         
         // Simple fixed position toggle at 200px threshold
-        if (scrollTop > 200 && !isSticky) {
+        if (scrollTop > 155 && !isSticky) {
           // Switch to fixed position
           isSticky = true;
           $gridContainer.css({
@@ -134,7 +134,7 @@ export function home() {
           $gridContainer.find('.nav-text').css('opacity', 0);
           $gridContainer.find('a').css('height', '100px');
         } 
-        else if (scrollTop <= 200 && isSticky) {
+        else if (scrollTop <= 155 && isSticky) {
           // Revert to normal flow
           isSticky = false;
           $gridContainer.css({
