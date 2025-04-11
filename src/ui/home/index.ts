@@ -146,16 +146,13 @@ function createNavigationItem(item: { icon: string, text: string, url: string })
 function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
   // State variables
   let isSticky = false;
-  let gridWidth = 0;
-  let gridLeft = 0;
   let gridContainerHeight = 0;
   let transitionInProgress = false;
 
   // Initialize measurements when document is ready
   $(document).ready(function() {
     setTimeout(function() {
-      updateMeasurements();
-      createSpacer();
+      updateSpacerHeight();
       setupEventListeners();
       
       // Add transition end event listener
@@ -165,14 +162,13 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
     }, 200);
   });
 
-  function updateMeasurements() {
-    gridWidth = $gridContainer.outerWidth() || 0;
-    gridLeft = $gridContainer.offset()?.left || 0;
+  function updateSpacerHeight() {
     gridContainerHeight = $gridContainer.outerHeight() || 0;
+    $('#grid-spacer').css('height', gridContainerHeight + 'px');
   }
 
   function createSpacer() {
-    // Create a clone of the grid for spacing when fixed
+    // Create a spacer element for when grid is fixed
     const $spacer = $("<div id='grid-spacer'></div>").css({
       ...SPACER_STYLES,
       height: gridContainerHeight + 'px'
@@ -182,11 +178,19 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
   }
 
   function setupEventListeners() {
+    // Create spacer element
+    createSpacer();
+    
     // Handle scroll events
     $(window).on('scroll', handleScroll);
     
     // Update measurements on window resize
-    $(window).on('resize', handleResize);
+    $(window).on('resize', function() {
+      // Update spacer height on resize
+      if (!isSticky) {
+        updateSpacerHeight();
+      }
+    });
   }
 
   function handleScroll() {
@@ -276,7 +280,8 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
       height: '180px',
       padding: '20px',
       flexDirection: 'column',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      width: ''
     });
     
     // Restore icon size
@@ -285,15 +290,8 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
       height: '48px',
       marginBottom: '15px'
     });
-  }
-
-  function handleResize() {
-    // Only update measurements if not in sticky mode
-    if (!isSticky) {
-      updateMeasurements();
-    }
-    // Always update height for spacer
-    gridContainerHeight = $gridContainer.outerHeight() || 0;
-    $('#grid-spacer').css('height', gridContainerHeight + 'px');
+    
+    // Update spacer height after transition
+    setTimeout(updateSpacerHeight, 300);
   }
 }
