@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@types/jquery": "^1.10.27",
+    "@types/jqueryui": "^1.9.27",
     "@types/node": "^22.14.0",
     "concurrently": "^9.1.2",
     "serve": "^14.2.4",
