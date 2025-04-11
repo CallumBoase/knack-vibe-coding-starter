@@ -155,6 +155,7 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
       updateSpacerHeight();
       setupEventListeners();
       updateGridLayout();
+      setupIntersectionObserver();
       
       // Add transition end event listener
       $gridContainer.on('transitionend', function() {
@@ -182,8 +183,18 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
     // Create spacer element
     createSpacer();
     
-    // Handle scroll events
-    $(window).on('scroll', handleScroll);
+    // Create sentinel element for intersection observer
+    const $sentinel = $("<div id='grid-sentinel'></div>").css({
+      position: 'absolute',
+      height: '1px',
+      width: '100%',
+      visibility: 'hidden',
+      pointerEvents: 'none'
+    });
+    $gridContainer.after($sentinel);
+    
+    // Handle scroll events for welcome message fade only
+    $(window).on('scroll', handleWelcomeFade);
     
     // Update measurements on window resize
     $(window).on('resize', function() {
@@ -192,40 +203,84 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
         updateSpacerHeight();
         updateGridLayout();
       }
+      // Reposition sentinel
+      positionSentinel();
     });
   }
 
-  function handleScroll() {
-    const scrollTop = $(window).scrollTop() || 0;
+  function positionSentinel() {
+    // Place sentinel at position where we want grid to become sticky
+    // (50px from the bottom of the viewport when grid is in normal position)
+    const viewportHeight = $(window).height();
+    const sentinelPosition = $gridContainer.offset()?.top + 
+                            $gridContainer.outerHeight() -
+                            viewportHeight + 50;
     
-    // Fade welcome message
-    handleWelcomeMessageFade(scrollTop);
-    
-    // Handle sticky navigation
-    handleStickyNavigation(scrollTop);
+    $('#grid-sentinel').css('top', sentinelPosition + 'px');
   }
 
-  function handleWelcomeMessageFade(scrollTop: number) {
+  function setupIntersectionObserver() {
+    if (!window.IntersectionObserver) {
+      // Fallback for browsers that don't support IntersectionObserver
+      $(window).on('scroll', handleLegacyStickyBehavior);
+      return;
+    }
+    
+    // Position the sentinel element
+    positionSentinel();
+    
+    // Create the observer
+    const options = {
+      threshold: [0, 1]
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+      // Skip if transition is already in progress
+      if (transitionInProgress) return;
+      
+      const entry = entries[0];
+      
+      // If sentinel is intersecting (visible), remove sticky state
+      if (entry.isIntersecting && isSticky) {
+        transitionInProgress = true;
+        revertGridToNormal();
+      } 
+      // If sentinel is not intersecting (not visible) and we've scrolled, add sticky state
+      else if (!entry.isIntersecting && !isSticky && $(window).scrollTop() > 0) {
+        transitionInProgress = true;
+        makeGridSticky();
+      }
+    }, options);
+    
+    // Start observing the sentinel
+    const sentinelElement = document.getElementById('grid-sentinel');
+    if (sentinelElement) {
+      observer.observe(sentinelElement);
+    }
+  }
+
+  function handleLegacyStickyBehavior() {
+    // Fallback function for older browsers
+    const scrollTop = $(window).scrollTop() || 0;
+    const triggerPoint = $('#grid-sentinel').offset()?.top - $(window).height();
+    
+    if (scrollTop > triggerPoint && !isSticky) {
+      transitionInProgress = true;
+      makeGridSticky();
+    } else if (scrollTop <= triggerPoint && isSticky) {
+      transitionInProgress = true;
+      revertGridToNormal();
+    }
+  }
+
+  function handleWelcomeFade() {
+    const scrollTop = $(window).scrollTop() || 0;
+    
     if (scrollTop > 50) {
       const opacity = Math.max(0, 1 - scrollTop / 150);
       $welcomeMessage.css('opacity', opacity);
     } else {
       $welcomeMessage.css('opacity', 1);
-    }
-  }
-
-  function handleStickyNavigation(scrollTop: number) {
-    // Avoid multiple transitions at once
-    if (transitionInProgress) return;
-    
-    // Make grid sticky at 155px threshold
-    if (scrollTop > 155 && !isSticky) {
-      transitionInProgress = true;
-      makeGridSticky();
-    } 
-    else if (scrollTop <= 155 && isSticky) {
-      transitionInProgress = true;
-      revertGridToNormal();
     }
   }
 
