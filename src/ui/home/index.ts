@@ -2,7 +2,7 @@ export function home() {
   const homeContainer = $("<div class='knack-home-container'></div>");
   
   // Add welcome header
-  const header = $("<h2 class='knack-home-header'>Welcome! You're viewing Brandon.</h2>");
+  const header = $("<h2 class='knack-home-header'>Welcome to NCM360, Catherine.</h2>");
   homeContainer.append(header);
   
   // Create the grid of menu items
@@ -66,7 +66,7 @@ export function home() {
       .knack-home-container {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 20px;
+        padding: 0;
         font-family: 'Helvetica Neue', Arial, sans-serif;
       }
       
@@ -84,6 +84,27 @@ export function home() {
         justify-content: space-between;
         gap: 16px;
         transition: all 0.3s ease;
+      }
+      
+      .knack-menu-grid.sticky {
+        position: fixed;
+        top: 76.25px;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background-color: white;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: none;
+        gap: 8px;
+        display: flex;
+        align-items: center;
+      }
+      
+      .knack-menu-grid.sticky .knack-menu-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       
       .knack-menu-item {
@@ -148,10 +169,13 @@ export function home() {
       @media (max-width: 600px) {
         .knack-menu-grid {
           flex-wrap: wrap;
+          gap: 8px;
+          justify-content: space-between;
         }
         
         .knack-menu-item {
-          flex: 0 0 45%;
+          flex: 0 0 calc(33.333% - 8px);
+          margin-bottom: 8px;
         }
         
         /* Compact state when scrolled */
@@ -199,34 +223,38 @@ export function home() {
           const menuIcons = menuGrid.querySelectorAll('.knack-menu-icon');
           const menuLabels = menuGrid.querySelectorAll('.knack-menu-label');
           
-          // Only apply on mobile
-          if (window.innerWidth <= 600) {
-            // Store original position of menu for reference
-            const menuRect = menuGrid.getBoundingClientRect();
-            const menuOriginalTop = menuRect.top + window.pageYOffset;
-            const headerHeight = 59.25; // Height of the sticky header
+          // Store original position of menu for reference
+          const menuRect = menuGrid.getBoundingClientRect();
+          const menuOriginalTop = menuRect.top + window.pageYOffset;
+          const headerHeight = 59.25; // Height of the sticky header
+          
+          // Calculate when to transform (when menu gets close to header)
+          const transformThreshold = Math.max(10, menuOriginalTop - headerHeight - 20);
+          
+          window.addEventListener('scroll', function() {
+            const scrollPos = window.pageYOffset || document.documentElement.scrollTop;
             
-            // Calculate when to transform (when menu gets close to header)
-            const transformThreshold = Math.max(10, menuOriginalTop - headerHeight - 20);
-            
-            window.addEventListener('scroll', function() {
-              const scrollPos = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollPos > transformThreshold) {
+              // Add sticky class
+              menuGrid.classList.add('sticky');
               
-              if (scrollPos > transformThreshold) {
+              // Only apply compact style on mobile
+              if (window.innerWidth <= 600) {
                 // Add compact classes
                 menuGrid.classList.add('compact');
                 menuItems.forEach(item => item.classList.add('compact'));
                 menuIcons.forEach(icon => icon.classList.add('compact'));
                 menuLabels.forEach(label => label.classList.add('compact'));
-              } else {
-                // Remove compact classes
-                menuGrid.classList.remove('compact');
-                menuItems.forEach(item => item.classList.remove('compact'));
-                menuIcons.forEach(icon => icon.classList.remove('compact'));
-                menuLabels.forEach(label => label.classList.remove('compact'));
               }
-            });
-          }
+            } else {
+              // Remove sticky and compact classes
+              menuGrid.classList.remove('sticky');
+              menuGrid.classList.remove('compact');
+              menuItems.forEach(item => item.classList.remove('compact'));
+              menuIcons.forEach(icon => icon.classList.remove('compact'));
+              menuLabels.forEach(label => label.classList.remove('compact'));
+            }
+          });
         }, 300);
       })();
     </script>
