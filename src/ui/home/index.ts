@@ -88,12 +88,12 @@ export function home() {
       
       .knack-menu-grid.sticky {
         position: fixed;
-        top: 76.25px;
+        top: 79.25px;
         left: 0;
         right: 0;
         z-index: 100;
         background-color: white;
-        padding: 10px;
+        padding: 10px 10px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         max-width: none;
         gap: 8px;
@@ -107,10 +107,17 @@ export function home() {
         justify-content: center;
       }
       
+      .knack-menu-grid.sticky .knack-menu-icon {
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
       .knack-menu-item {
         background-color: #f5f9fb;
         border-radius: 10px;
-        padding: 16px;
+        padding: 12px;
         display: flex;
         flex-direction: column;
         align-items: center;
