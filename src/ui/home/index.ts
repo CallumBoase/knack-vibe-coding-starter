@@ -8,6 +8,15 @@ const NAV_ITEMS = [
   { icon: '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>', text: 'Security', url: '#security' }
 ];
 
+// Header height configuration
+const HEADER_HEIGHTS = {
+  desktop: '110px',
+  mobile: '59.25px'
+};
+
+// Mobile breakpoint
+const MOBILE_BREAKPOINT = '768px';
+
 // Style definitions
 const CONTAINER_STYLES = {
   padding: '20px',
@@ -27,7 +36,7 @@ const WELCOME_STYLES = {
 
 const GRID_STYLES = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)', // Default for mobile: 2 columns
+  gridTemplateColumns: 'repeat(2, 1fr)', // Default for mobile (< 768px)
   gap: '20px',
   width: '100%',
   backgroundColor: 'white',
@@ -71,7 +80,7 @@ const NAV_ITEM_STYLES = {
 
 const STICKY_GRID_STYLES = {
   position: 'fixed',
-  top: '110px',
+  // The top value will be set dynamically based on screen size
   boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
   zIndex: 100
 };
@@ -287,7 +296,7 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
   function updateGridLayout() {
     // Only apply this when not sticky
     if (!isSticky) {
-      if (window.matchMedia('(min-width: 768px)').matches) {
+      if (window.matchMedia(`(min-width: ${MOBILE_BREAKPOINT})`).matches) {
         // Desktop: 3 columns
         $gridContainer.css('gridTemplateColumns', 'repeat(3, 1fr)');
       } else {
@@ -300,8 +309,14 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
   function makeGridSticky() {
     // Switch to fixed position
     isSticky = true;
+    
+    // Determine if we're on mobile or desktop
+    const isMobile = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT})`).matches;
+    const headerHeight = isMobile ? HEADER_HEIGHTS.mobile : HEADER_HEIGHTS.desktop;
+    
     $gridContainer.css({
       ...STICKY_GRID_STYLES,
+      top: headerHeight,
       left: '0',
       width: '100%',
       maxWidth: '100%',
