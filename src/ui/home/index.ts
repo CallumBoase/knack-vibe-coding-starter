@@ -324,7 +324,10 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
       gap: '8px',
       padding: '8px 20px'
     });
-    $('#grid-spacer').show();
+    
+    // Resize spacer to match compact grid height (48px + padding)
+    const compactGridHeight = 48 + 16 + 120; // height + padding + adjustment for content position
+    $('#grid-spacer').css('height', compactGridHeight + 'px').show();
     
     // Hide text completely and reduce height of nav items
     $gridContainer.find('.nav-text').hide();
