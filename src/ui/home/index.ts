@@ -60,7 +60,7 @@ export function home() {
   const style = $(`
     <style>
       .knack-home-container {
-        max-width: 600px;
+        max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
         font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -74,8 +74,10 @@ export function home() {
       }
       
       .knack-menu-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: space-between;
         gap: 16px;
       }
       
@@ -90,6 +92,8 @@ export function home() {
         transition: all 0.3s ease;
         border: 1px solid #e5e5e5;
         text-decoration: none;
+        flex: 1;
+        min-width: 0;
       }
       
       .knack-menu-item:hover {
@@ -110,11 +114,33 @@ export function home() {
         font-size: 14px;
         color: #333;
         font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
       }
       
+      /* Tablet breakpoint */
+      @media (max-width: 992px) {
+        .knack-menu-grid {
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+        
+        .knack-menu-item {
+          flex: 0 0 30%;
+          margin-bottom: 16px;
+        }
+      }
+      
+      /* Mobile breakpoint */
       @media (max-width: 600px) {
         .knack-menu-grid {
-          grid-template-columns: repeat(2, 1fr);
+          flex-wrap: wrap;
+        }
+        
+        .knack-menu-item {
+          flex: 0 0 45%;
         }
       }
     </style>
