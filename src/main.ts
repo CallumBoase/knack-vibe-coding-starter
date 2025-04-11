@@ -1,3 +1,5 @@
+import './home/index';
+
 declare global {
   interface Window {
     $: any
