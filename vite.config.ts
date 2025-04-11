@@ -7,7 +7,7 @@ export default defineConfig({
     lib: {
       // Could also be a dictionary or array of multiple entry points
       entry: fileURLToPath(new URL('src/main.ts', import.meta.url)),
-      name: 'KnackVibeApp', // The global variable name when included via script tag (UMD format)
+      name: 'KnackVibeCodingLibrary', // The global variable name when included via script tag (UMD format)
       formats: ['umd'], // Output UMD format suitable for script tags
       fileName: (format) => `knack-vibe-coding-library.js`, // Output filename
     },

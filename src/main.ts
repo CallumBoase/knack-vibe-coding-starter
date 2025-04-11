@@ -1,14 +1,17 @@
-import 'jquery'; // Import for side effects to load jQuery types
-
-// Add type declaration for jQuery on window object
 declare global {
   interface Window {
-    $: JQueryStatic; // Use the specific jQuery type
+    $: any
   }
 }
 
-const $: JQueryStatic = window.$; // Explicitly type the local constant
+const $ = window.$; // Explicitly type the local constant
 
-$(document).ready(function () {
-  console.log("Here we are!");
-});
+console.log('The KnackVibeCodingLibraryscript has been imported!')
+
+export function hello() {
+  console.log("Hello from the custom methods object!");
+}
+
+export function add(a: number, b: number) {
+  return a + b;
+}
