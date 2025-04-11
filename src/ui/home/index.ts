@@ -34,7 +34,7 @@ const GRID_STYLES = {
   borderRadius: '12px',
   padding: '20px',
   boxSizing: 'border-box',
-  transition: 'box-shadow 0.3s ease'
+  transition: 'box-shadow 0.3s ease, grid-template-columns 0.3s ease, gap 0.3s ease, padding 0.3s ease'
 };
 
 const NAV_ITEM_STYLES = {
@@ -65,7 +65,7 @@ const NAV_ITEM_STYLES = {
   text: {
     textAlign: 'center',
     fontWeight: 'bold',
-    transition: 'opacity 0.3s ease'
+    transition: 'all 0.3s ease'
   }
 };
 
@@ -149,6 +149,7 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
   let gridWidth = 0;
   let gridLeft = 0;
   let gridContainerHeight = 0;
+  let transitionInProgress = false;
 
   // Initialize measurements when document is ready
   $(document).ready(function() {
@@ -156,6 +157,11 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
       updateMeasurements();
       createSpacer();
       setupEventListeners();
+      
+      // Add transition end event listener
+      $gridContainer.on('transitionend', function() {
+        transitionInProgress = false;
+      });
     }, 200);
   });
 
@@ -203,11 +209,16 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
   }
 
   function handleStickyNavigation(scrollTop: number) {
+    // Avoid multiple transitions at once
+    if (transitionInProgress) return;
+    
     // Make grid sticky at 155px threshold
     if (scrollTop > 155 && !isSticky) {
+      transitionInProgress = true;
       makeGridSticky();
     } 
     else if (scrollTop <= 155 && isSticky) {
+      transitionInProgress = true;
       revertGridToNormal();
     }
   }
@@ -218,13 +229,26 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
     $gridContainer.css({
       ...STICKY_GRID_STYLES,
       left: gridLeft + 'px',
-      width: gridWidth + 'px'
+      width: gridWidth + 'px',
+      gridTemplateColumns: `repeat(${NAV_ITEMS.length}, 1fr)`,
+      gap: '10px',
+      padding: '10px'
     });
     $('#grid-spacer').show();
     
-    // Hide text on buttons
-    $gridContainer.find('.nav-text').css('opacity', 0);
-    $gridContainer.find('a').css('height', '100px');
+    // Hide text completely and reduce height of nav items
+    $gridContainer.find('.nav-text').hide();
+    $gridContainer.find('a').css({
+      height: '60px',
+      padding: '10px'
+    });
+    
+    // Resize and center icons
+    $gridContainer.find('svg').css({
+      width: '24px',
+      height: '24px',
+      margin: '0'
+    });
   }
 
   function revertGridToNormal() {
@@ -235,13 +259,26 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
       top: 'auto',
       left: 'auto',
       width: '100%',
-      boxShadow: 'none'
+      boxShadow: 'none',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+      gap: '20px',
+      padding: '20px'
     });
     $('#grid-spacer').hide();
     
     // Restore text on buttons
-    $gridContainer.find('.nav-text').css('opacity', 1);
-    $gridContainer.find('a').css('height', '180px');
+    $gridContainer.find('.nav-text').show();
+    $gridContainer.find('a').css({
+      height: '180px',
+      padding: '20px'
+    });
+    
+    // Restore icon size
+    $gridContainer.find('svg').css({
+      width: '48px',
+      height: '48px',
+      marginBottom: '15px'
+    });
   }
 
   function handleResize() {
