@@ -1,5 +1,3 @@
-import './home/index';
-
 declare global {
   interface Window {
     $: any
@@ -8,14 +6,12 @@ declare global {
 
 const $ = window.$; // Explicitly type the local constant
 
-console.log('The KnackVibeCodingLibraryscript has been imported!')
+$(document).ready(function () {
+  console.log("The KnackVibeCodingLibraryscript is running!");
+});
 
-export function hello() {
-  console.log("Hello from the custom methods object!");
-}
+import { home } from './ui/home/index';
 
-export function add(a: number, b: number) {
-  return a + b;
-}
-
-export { home } from './home/index';
+$(document).on('knack-view-render.view_1', function(event, view, records){
+  $('#home').html(home());
+})
