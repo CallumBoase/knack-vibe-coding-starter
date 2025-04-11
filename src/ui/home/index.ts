@@ -56,6 +56,10 @@ export function home() {
   
   homeContainer.append(menuGrid);
   
+  // Create a unique ID for the menu grid
+  const menuGridId = 'knack-menu-grid-' + Math.floor(Math.random() * 100000);
+  menuGrid.attr('id', menuGridId);
+  
   // Add CSS
   const style = $(`
     <style>
@@ -79,6 +83,7 @@ export function home() {
         flex-wrap: nowrap;
         justify-content: space-between;
         gap: 16px;
+        transition: all 0.3s ease;
       }
       
       .knack-menu-item {
@@ -107,6 +112,11 @@ export function home() {
         display: flex;
         justify-content: center;
         align-items: center;
+        transition: all 0.3s ease;
+      }
+      
+      .knack-menu-icon svg {
+        transition: all 0.3s ease;
       }
       
       .knack-menu-label {
@@ -118,6 +128,7 @@ export function home() {
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
+        transition: all 0.3s ease;
       }
       
       /* Tablet breakpoint */
@@ -142,11 +153,86 @@ export function home() {
         .knack-menu-item {
           flex: 0 0 45%;
         }
+        
+        /* Compact state when scrolled */
+        .knack-menu-grid.compact {
+          flex-wrap: nowrap;
+          justify-content: space-between;
+          background-color: #f5f9fb;
+          padding: 5px 10px;
+          margin: -20px -20px 20px -20px;
+          border-bottom: 1px solid #e5e5e5;
+        }
+        
+        .knack-menu-item.compact {
+          padding: 5px;
+          flex: 1;
+          border: none;
+          background: none;
+          margin-bottom: 0;
+        }
+        
+        .knack-menu-icon.compact svg {
+          width: 24px;
+          height: 24px;
+        }
+        
+        .knack-menu-label.compact {
+          display: none;
+        }
       }
     </style>
   `);
   
   homeContainer.append(style);
+  
+  // Add simple scroll behavior
+  const scrollScript = $(`
+    <script>
+      (function() {
+        // Run after a slight delay to ensure DOM is ready
+        setTimeout(function() {
+          const menuGrid = document.getElementById('${menuGridId}');
+          if (!menuGrid) return;
+          
+          const menuItems = menuGrid.querySelectorAll('.knack-menu-item');
+          const menuIcons = menuGrid.querySelectorAll('.knack-menu-icon');
+          const menuLabels = menuGrid.querySelectorAll('.knack-menu-label');
+          
+          // Only apply on mobile
+          if (window.innerWidth <= 600) {
+            // Store original position of menu for reference
+            const menuRect = menuGrid.getBoundingClientRect();
+            const menuOriginalTop = menuRect.top + window.pageYOffset;
+            const headerHeight = 59.25; // Height of the sticky header
+            
+            // Calculate when to transform (when menu gets close to header)
+            const transformThreshold = Math.max(10, menuOriginalTop - headerHeight - 20);
+            
+            window.addEventListener('scroll', function() {
+              const scrollPos = window.pageYOffset || document.documentElement.scrollTop;
+              
+              if (scrollPos > transformThreshold) {
+                // Add compact classes
+                menuGrid.classList.add('compact');
+                menuItems.forEach(item => item.classList.add('compact'));
+                menuIcons.forEach(icon => icon.classList.add('compact'));
+                menuLabels.forEach(label => label.classList.add('compact'));
+              } else {
+                // Remove compact classes
+                menuGrid.classList.remove('compact');
+                menuItems.forEach(item => item.classList.remove('compact'));
+                menuIcons.forEach(icon => icon.classList.remove('compact'));
+                menuLabels.forEach(label => label.classList.remove('compact'));
+              }
+            });
+          }
+        }, 300);
+      })();
+    </script>
+  `);
+  
+  homeContainer.append(scrollScript);
   
   return homeContainer;
 }
