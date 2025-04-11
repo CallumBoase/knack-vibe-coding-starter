@@ -27,7 +27,7 @@ const WELCOME_STYLES = {
 
 const GRID_STYLES = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+  gridTemplateColumns: 'repeat(2, 1fr)', // Default for mobile: 2 columns
   gap: '20px',
   width: '100%',
   backgroundColor: 'white',
@@ -154,6 +154,7 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
     setTimeout(function() {
       updateSpacerHeight();
       setupEventListeners();
+      updateGridLayout();
       
       // Add transition end event listener
       $gridContainer.on('transitionend', function() {
@@ -189,6 +190,7 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
       // Update spacer height on resize
       if (!isSticky) {
         updateSpacerHeight();
+        updateGridLayout();
       }
     });
   }
@@ -227,6 +229,19 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
     }
   }
 
+  function updateGridLayout() {
+    // Only apply this when not sticky
+    if (!isSticky) {
+      if (window.matchMedia('(min-width: 768px)').matches) {
+        // Desktop: 3 columns
+        $gridContainer.css('gridTemplateColumns', 'repeat(3, 1fr)');
+      } else {
+        // Mobile: 2 columns
+        $gridContainer.css('gridTemplateColumns', 'repeat(2, 1fr)');
+      }
+    }
+  }
+
   function makeGridSticky() {
     // Switch to fixed position
     isSticky = true;
@@ -235,7 +250,7 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
       left: '0',
       width: '100%',
       maxWidth: '100%',
-      gridTemplateColumns: `repeat(${NAV_ITEMS.length}, 1fr)`,
+      gridTemplateColumns: `repeat(${NAV_ITEMS.length}, 1fr)`, // Always 1 row of 6 items
       gap: '8px',
       padding: '8px 20px'
     });
@@ -268,10 +283,13 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
       left: 'auto',
       width: '100%',
       boxShadow: 'none',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
       gap: '20px',
       padding: '20px'
     });
+    
+    // Apply the correct grid layout based on screen size
+    updateGridLayout();
+    
     $('#grid-spacer').hide();
     
     // Restore text on buttons
