@@ -228,19 +228,23 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
     isSticky = true;
     $gridContainer.css({
       ...STICKY_GRID_STYLES,
-      left: gridLeft + 'px',
-      width: gridWidth + 'px',
+      left: '0',
+      width: '100%',
+      maxWidth: '100%',
       gridTemplateColumns: `repeat(${NAV_ITEMS.length}, 1fr)`,
-      gap: '10px',
-      padding: '10px'
+      gap: '8px',
+      padding: '8px 20px'
     });
     $('#grid-spacer').show();
     
     // Hide text completely and reduce height of nav items
     $gridContainer.find('.nav-text').hide();
     $gridContainer.find('a').css({
-      height: '60px',
-      padding: '10px'
+      height: '48px',
+      padding: '8px',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      width: '100%'
     });
     
     // Resize and center icons
@@ -270,7 +274,9 @@ function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
     $gridContainer.find('.nav-text').show();
     $gridContainer.find('a').css({
       height: '180px',
-      padding: '20px'
+      padding: '20px',
+      flexDirection: 'column',
+      justifyContent: 'center'
     });
     
     // Restore icon size
