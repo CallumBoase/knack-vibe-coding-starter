@@ -170,7 +170,9 @@ function createStickyNavigation() {
     backgroundColor: 'white',
     boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
     zIndex: 100,
-    display: 'none',
+    opacity: 0,
+    transform: 'translateY(-20px)',
+    pointerEvents: 'none', // Initially disable interactions
     padding: '8px 20px',
     boxSizing: 'border-box'
   });
@@ -235,17 +237,8 @@ function createStickyNavigation() {
   $(window).on('resize', function() {
     const newHeaderHeight = getHeaderHeight();
     $stickyNav.css('top', newHeaderHeight + 'px');
-    
-    // Adjust for mobile
-    if (window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT})`).matches) {
-      $rowContainer.find('a').css('padding', '4px');
-      $rowContainer.css('gap', '4px');
-      $stickyNav.css('padding', '8px 10px');
-    } else {
-      $rowContainer.find('a').css('padding', '8px');
-      $rowContainer.css('gap', '8px');
-      $stickyNav.css('padding', '8px 20px');
-    }
+    $rowContainer.css('gap', '8px');
+    $stickyNav.css('padding', '8px 20px');
   });
   
   return $stickyNav;
@@ -257,13 +250,16 @@ function addNavStyles() {
   styleElement.textContent = `
     #sticky-nav {
       opacity: 0;
-      transform: translateY(-100%);
-      transition: transform 0.3s ease, opacity 0.3s ease;
+      transform: translateY(-20px);
+      transition: transform 0.4s ease, opacity 0.4s ease;
+      will-change: transform, opacity;
+      pointer-events: none;
     }
     
     #sticky-nav.visible {
       opacity: 1;
       transform: translateY(0);
+      pointer-events: auto;
     }
     
     @media (max-width: ${MOBILE_BREAKPOINT}) {
@@ -296,33 +292,49 @@ function initScrollBehavior($welcomeMessage: JQuery, $normalNav: JQuery, $sticky
   })
   .addTo(controller);
   
-  // Calculate trigger point - when normal nav would scroll out of view
-  const triggerOffset = $normalNav.offset()?.top || 0;
+  // Calculate trigger point
   const headerHeight = getHeaderHeight();
   
-  // Show/hide sticky navigation
-  new ScrollMagic.Scene({
+  // Show/hide sticky navigation - important changes here
+  let stickyVisible = false;
+  
+  const stickyScene = new ScrollMagic.Scene({
     triggerElement: '#normal-nav',
     triggerHook: 0,
-    offset: -headerHeight // Account for fixed header
+    offset: -headerHeight
   })
   .on('enter', function() {
     console.log('Showing sticky navigation');
-    $stickyNav.show().addClass('visible');
+    stickyVisible = true;
+    $stickyNav.addClass('visible');
   })
   .on('leave', function() {
     console.log('Hiding sticky navigation');
+    stickyVisible = false;
     $stickyNav.removeClass('visible');
-    setTimeout(function() {
-      if (!$stickyNav.hasClass('visible')) {
-        $stickyNav.hide();
-      }
-    }, 300); // Match transition duration
   })
   .addTo(controller);
   
+  // Add additional scroll handler for extra reliability
+  $(window).on('scroll', function() {
+    const normalNavTop = $normalNav.offset()?.top || 0;
+    const scrollTop = $(window).scrollTop() || 0;
+    
+    // Check if we've scrolled past the navigation
+    if (scrollTop + headerHeight >= normalNavTop && !stickyVisible) {
+      stickyVisible = true;
+      $stickyNav.addClass('visible');
+    } else if (scrollTop + headerHeight < normalNavTop && stickyVisible) {
+      stickyVisible = false;
+      $stickyNav.removeClass('visible');
+    }
+  });
+  
   // Update on resize
   $(window).on('resize', function() {
+    const newHeaderHeight = getHeaderHeight();
+    $stickyNav.css('top', newHeaderHeight + 'px');
+    stickyScene.offset(-newHeaderHeight);
     controller.update(true);
   });
 }
