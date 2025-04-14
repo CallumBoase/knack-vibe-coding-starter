@@ -90,6 +90,9 @@ const SPACER_STYLES = {
   display: 'none'
 };
 
+// For TypeScript support with ScrollMagic
+declare const ScrollMagic: any;
+
 export function home() {
   // Create components
   const $homeContainer = createHomeContainer();
@@ -153,236 +156,141 @@ function createNavigationItem(item: { icon: string, text: string, url: string })
 }
 
 function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
-  // State variables
+  // Initialize ScrollMagic controller
+  const controller = new ScrollMagic.Controller();
+  
+  // Scene for welcome message fade effect
+  new ScrollMagic.Scene({
+    triggerElement: "#welcome-message",
+    duration: 150,
+    offset: 50
+  })
+    .on("progress", function(event: any) {
+      const opacity = Math.max(0, 1 - event.progress);
+      $welcomeMessage.css('opacity', opacity);
+    })
+    .addTo(controller);
+  
+  // Scene for grid sticky behavior
   let isSticky = false;
-  let gridContainerHeight = 0;
-  let transitionInProgress = false;
-
-  // Initialize measurements when document is ready
+  
+  // Ensure the grid starts in normal mode
+  revertGridToNormal($gridContainer);
+  
+  // Create sticky scene with proper trigger point
+  const gridScene = new ScrollMagic.Scene({
+    triggerElement: "#grid-container",
+    triggerHook: 0.9,  // Trigger when 90% down the viewport (closer to bottom)
+    offset: $gridContainer.outerHeight() / 2 // Offset by half the grid height
+  })
+    .on("start", function(event: any) {
+      if (event.scrollDirection === "FORWARD" && !isSticky) {
+        isSticky = true;
+        makeGridSticky($gridContainer);
+      } else if (event.scrollDirection === "REVERSE" && isSticky) {
+        isSticky = false;
+        revertGridToNormal($gridContainer);
+      }
+    })
+    .addTo(controller);
+  
+  // Handle window resize events
+  $(window).on('resize', function() {
+    // Update grid layout based on screen size
+    if (!isSticky) {
+      updateGridLayout($gridContainer);
+    }
+    
+    // Update scene offset on resize
+    gridScene.offset($gridContainer.outerHeight() / 2);
+    
+    // Update ScrollMagic scenes
+    controller.update(true);
+  });
+  
+  // Initial grid layout setup
+  updateGridLayout($gridContainer);
+  
+  // Refresh ScrollMagic on document ready to ensure proper initialization
   $(document).ready(function() {
     setTimeout(function() {
-      updateSpacerHeight();
-      setupEventListeners();
-      updateGridLayout();
-      setupIntersectionObserver();
-      
-      // Add transition end event listener
-      $gridContainer.on('transitionend', function() {
-        transitionInProgress = false;
-      });
+      controller.update(true);
     }, 200);
   });
+}
 
-  function updateSpacerHeight() {
-    gridContainerHeight = $gridContainer.outerHeight() || 0;
-    $('#grid-spacer').css('height', gridContainerHeight + 'px');
+function updateGridLayout($gridContainer: JQuery) {
+  if (window.matchMedia(`(min-width: ${MOBILE_BREAKPOINT})`).matches) {
+    // Desktop: 3 columns
+    $gridContainer.css('gridTemplateColumns', 'repeat(3, 1fr)');
+  } else {
+    // Mobile: 2 columns
+    $gridContainer.css('gridTemplateColumns', 'repeat(2, 1fr)');
   }
+}
 
-  function createSpacer() {
-    // Create a spacer element for when grid is fixed
-    const $spacer = $("<div id='grid-spacer'></div>").css({
-      ...SPACER_STYLES,
-      height: gridContainerHeight + 'px'
-    });
-    
-    $gridContainer.before($spacer);
-  }
+function makeGridSticky($gridContainer: JQuery) {
+  // Determine if we're on mobile or desktop
+  const isMobile = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT})`).matches;
+  const headerHeight = isMobile ? HEADER_HEIGHTS.mobile : HEADER_HEIGHTS.desktop;
+  
+  $gridContainer.css({
+    ...STICKY_GRID_STYLES,
+    top: headerHeight,
+    left: '0',
+    width: '100%',
+    maxWidth: '100%',
+    gridTemplateColumns: `repeat(${NAV_ITEMS.length}, 1fr)`, // Always 1 row of 6 items
+    gap: '8px',
+    padding: '8px 20px'
+  });
+  
+  // Hide text completely and reduce height of nav items
+  $gridContainer.find('.nav-text').hide();
+  $gridContainer.find('a').css({
+    height: '48px',
+    padding: '8px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    width: '100%'
+  });
+  
+  // Resize and center icons
+  $gridContainer.find('svg').css({
+    width: '24px',
+    height: '24px',
+    margin: '0'
+  });
+}
 
-  function setupEventListeners() {
-    // Create spacer element
-    createSpacer();
-    
-    // Create sentinel element for intersection observer
-    const $sentinel = $("<div id='grid-sentinel'></div>").css({
-      position: 'absolute',
-      height: '1px',
-      width: '100%',
-      visibility: 'hidden',
-      pointerEvents: 'none'
-    });
-    $gridContainer.after($sentinel);
-    
-    // Handle scroll events for welcome message fade only
-    $(window).on('scroll', handleWelcomeFade);
-    
-    // Update measurements on window resize
-    $(window).on('resize', function() {
-      // Update spacer height on resize
-      if (!isSticky) {
-        updateSpacerHeight();
-        updateGridLayout();
-      }
-      // Reposition sentinel
-      positionSentinel();
-    });
-  }
-
-  function positionSentinel() {
-    // Place sentinel at position where we want grid to become sticky
-    // (50px from the bottom of the viewport when grid is in normal position)
-    const viewportHeight = $(window).height();
-    const sentinelPosition = $gridContainer.offset()?.top + 
-                            $gridContainer.outerHeight() -
-                            viewportHeight + 50;
-    
-    $('#grid-sentinel').css('top', sentinelPosition + 'px');
-  }
-
-  function setupIntersectionObserver() {
-    if (!window.IntersectionObserver) {
-      // Fallback for browsers that don't support IntersectionObserver
-      $(window).on('scroll', handleLegacyStickyBehavior);
-      return;
-    }
-    
-    // Position the sentinel element
-    positionSentinel();
-    
-    // Create the observer
-    const options = {
-      threshold: [0, 1]
-    };
-    
-    const observer = new IntersectionObserver((entries) => {
-      // Skip if transition is already in progress
-      if (transitionInProgress) return;
-      
-      const entry = entries[0];
-      
-      // If sentinel is intersecting (visible), remove sticky state
-      if (entry.isIntersecting && isSticky) {
-        transitionInProgress = true;
-        revertGridToNormal();
-      } 
-      // If sentinel is not intersecting (not visible) and we've scrolled, add sticky state
-      else if (!entry.isIntersecting && !isSticky && $(window).scrollTop() > 0) {
-        transitionInProgress = true;
-        makeGridSticky();
-      }
-    }, options);
-    
-    // Start observing the sentinel
-    const sentinelElement = document.getElementById('grid-sentinel');
-    if (sentinelElement) {
-      observer.observe(sentinelElement);
-    }
-  }
-
-  function handleLegacyStickyBehavior() {
-    // Fallback function for older browsers
-    const scrollTop = $(window).scrollTop() || 0;
-    const triggerPoint = $('#grid-sentinel').offset()?.top - $(window).height();
-    
-    if (scrollTop > triggerPoint && !isSticky) {
-      transitionInProgress = true;
-      makeGridSticky();
-    } else if (scrollTop <= triggerPoint && isSticky) {
-      transitionInProgress = true;
-      revertGridToNormal();
-    }
-  }
-
-  function handleWelcomeFade() {
-    const scrollTop = $(window).scrollTop() || 0;
-    
-    if (scrollTop > 50) {
-      const opacity = Math.max(0, 1 - scrollTop / 150);
-      $welcomeMessage.css('opacity', opacity);
-    } else {
-      $welcomeMessage.css('opacity', 1);
-    }
-  }
-
-  function updateGridLayout() {
-    // Only apply this when not sticky
-    if (!isSticky) {
-      if (window.matchMedia(`(min-width: ${MOBILE_BREAKPOINT})`).matches) {
-        // Desktop: 3 columns
-        $gridContainer.css('gridTemplateColumns', 'repeat(3, 1fr)');
-      } else {
-        // Mobile: 2 columns
-        $gridContainer.css('gridTemplateColumns', 'repeat(2, 1fr)');
-      }
-    }
-  }
-
-  function makeGridSticky() {
-    // Switch to fixed position
-    isSticky = true;
-    
-    // Determine if we're on mobile or desktop
-    const isMobile = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT})`).matches;
-    const headerHeight = isMobile ? HEADER_HEIGHTS.mobile : HEADER_HEIGHTS.desktop;
-    
-    $gridContainer.css({
-      ...STICKY_GRID_STYLES,
-      top: headerHeight,
-      left: '0',
-      width: '100%',
-      maxWidth: '100%',
-      gridTemplateColumns: `repeat(${NAV_ITEMS.length}, 1fr)`, // Always 1 row of 6 items
-      gap: '8px',
-      padding: '8px 20px'
-    });
-    
-    // Resize spacer to match compact grid height (48px + padding)
-    const compactGridHeight = 48 + 16 + 120; // height + padding + adjustment for content position
-    $('#grid-spacer').css('height', compactGridHeight + 'px').show();
-    
-    // Hide text completely and reduce height of nav items
-    $gridContainer.find('.nav-text').hide();
-    $gridContainer.find('a').css({
-      height: '48px',
-      padding: '8px',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      width: '100%'
-    });
-    
-    // Resize and center icons
-    $gridContainer.find('svg').css({
-      width: '24px',
-      height: '24px',
-      margin: '0'
-    });
-  }
-
-  function revertGridToNormal() {
-    // Revert to normal flow
-    isSticky = false;
-    $gridContainer.css({
-      position: 'static',
-      top: 'auto',
-      left: 'auto',
-      width: '100%',
-      boxShadow: 'none',
-      gap: '20px',
-      padding: '20px'
-    });
-    
-    // Apply the correct grid layout based on screen size
-    updateGridLayout();
-    
-    $('#grid-spacer').hide();
-    
-    // Restore text on buttons
-    $gridContainer.find('.nav-text').show();
-    $gridContainer.find('a').css({
-      height: '180px',
-      padding: '20px',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      width: ''
-    });
-    
-    // Restore icon size
-    $gridContainer.find('svg').css({
-      width: '48px',
-      height: '48px',
-      marginBottom: '15px'
-    });
-    
-    // Update spacer height after transition
-    setTimeout(updateSpacerHeight, 300);
-  }
+function revertGridToNormal($gridContainer: JQuery) {
+  $gridContainer.css({
+    position: 'static',
+    top: 'auto',
+    left: 'auto',
+    width: '100%',
+    boxShadow: 'none',
+    gap: '20px',
+    padding: '20px'
+  });
+  
+  // Apply the correct grid layout based on screen size
+  updateGridLayout($gridContainer);
+  
+  // Restore text on buttons
+  $gridContainer.find('.nav-text').show();
+  $gridContainer.find('a').css({
+    height: '180px',
+    padding: '20px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    width: ''
+  });
+  
+  // Restore icon size
+  $gridContainer.find('svg').css({
+    width: '48px',
+    height: '48px',
+    marginBottom: '15px'
+  });
 }
