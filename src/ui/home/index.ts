@@ -17,280 +17,322 @@ const HEADER_HEIGHTS = {
 // Mobile breakpoint
 const MOBILE_BREAKPOINT = '768px';
 
-// Style definitions
-const CONTAINER_STYLES = {
-  padding: '20px',
-  maxWidth: '1200px',
-  margin: '0 auto',
-  fontFamily: 'Arial, sans-serif'
-};
-
-const WELCOME_STYLES = {
-  fontSize: '32px',
-  fontWeight: 'bold',
-  marginBottom: '30px',
-  textAlign: 'center',
-  padding: '20px 0',
-  transition: 'opacity 0.3s ease'
-};
-
-const GRID_STYLES = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)', // Default for mobile (< 768px)
-  gap: '20px',
-  width: '100%',
-  backgroundColor: 'white',
-  borderRadius: '12px',
-  padding: '20px',
-  boxSizing: 'border-box',
-  transition: 'box-shadow 0.3s ease, grid-template-columns 0.3s ease, gap 0.3s ease, padding 0.3s ease'
-};
-
-const NAV_ITEM_STYLES = {
-  base: {
-    backgroundColor: '#f5f5f7',
-    borderRadius: '12px',
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textDecoration: 'none',
-    color: '#333',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    transition: 'all 0.3s ease',
-    height: '180px',
-    cursor: 'pointer'
-  },
-  hover: {
-    transform: 'translateY(-5px)',
-    boxShadow: '0 10px 15px rgba(0, 0, 0, 0.1)'
-  },
-  icon: {
-    marginBottom: '15px',
-    color: '#555',
-    transition: 'all 0.3s ease'
-  },
-  text: {
-    textAlign: 'center',
-    fontWeight: 'bold',
-    transition: 'all 0.3s ease'
-  }
-};
-
-const STICKY_GRID_STYLES = {
-  position: 'fixed',
-  // The top value will be set dynamically based on screen size
-  boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
-  zIndex: 100
-};
-
-const SPACER_STYLES = {
-  width: '100%',
-  display: 'none'
-};
-
 // For TypeScript support with ScrollMagic
 declare const ScrollMagic: any;
 
 export function home() {
-  // Create components
-  const $homeContainer = createHomeContainer();
-  const $welcomeMessage = createWelcomeMessage();
-  const $gridContainer = createNavigationGrid();
+  // Create container
+  const $homeContainer = $("<div id='ncm-home-container'></div>").css({
+    maxWidth: '1200px',
+    margin: '0 auto',
+    fontFamily: 'Arial, sans-serif',
+    padding: '20px'
+  });
+  
+  // Create welcome message
+  const $welcomeMessage = $("<div id='welcome-message'></div>")
+    .text("Welcome to NCM360, Catherine")
+    .css({
+      fontSize: '32px',
+      fontWeight: 'bold',
+      marginBottom: '30px',
+      textAlign: 'center',
+      padding: '20px 0',
+      transition: 'opacity 0.3s ease'
+    });
+  
+  // 1. Create normal navigation grid
+  const $normalNav = createNormalNavigation();
+
+  // 2. Create sticky navigation (initially hidden)
+  const $stickyNav = createStickyNavigation();
+  
+  // 3. Create content area for demo
+  const $contentPlaceholder = $("<div id='content-placeholder'></div>")
+    .html("<p style='padding: 20px 0;'>This is where the main page content would go...</p>".repeat(10))
+    .css({
+      marginTop: '20px',
+      padding: '20px',
+      backgroundColor: '#f9f9f9',
+      borderRadius: '12px'
+    });
   
   // Assemble the page
-  $homeContainer.append($welcomeMessage).append($gridContainer);
+  $homeContainer.append($welcomeMessage).append($normalNav).append($contentPlaceholder);
   
-  // Setup dynamic behavior
-  setupScrollBehavior($welcomeMessage, $gridContainer);
+  // Add the sticky navigation to the body (outside the container)
+  $("body").append($stickyNav);
+  
+  // Add styles for the navigation
+  addNavStyles();
+  
+  // Set up ScrollMagic when document is ready
+  $(document).ready(function() {
+    setTimeout(function() {
+      initScrollBehavior($welcomeMessage, $normalNav, $stickyNav);
+    }, 100);
+  });
   
   return $homeContainer;
 }
 
-function createHomeContainer() {
-  return $("<div id='ncm-home-container'></div>").css(CONTAINER_STYLES);
-}
-
-function createWelcomeMessage() {
-  return $("<div id='welcome-message'></div>")
-    .text("Welcome to NCM360, Catherine")
-    .css(WELCOME_STYLES);
-}
-
-function createNavigationGrid() {
-  const $gridContainer = $("<div id='grid-container'></div>").css(GRID_STYLES);
-  
-  // Create and add each navigation box
-  NAV_ITEMS.forEach(item => {
-    const $box = createNavigationItem(item);
-    $gridContainer.append($box);
+// Create the normal grid navigation
+function createNormalNavigation() {
+  const $normalNav = $("<div id='normal-nav'></div>").css({
+    display: 'grid',
+    gridTemplateColumns: window.matchMedia(`(min-width: ${MOBILE_BREAKPOINT})`).matches ? 
+      'repeat(3, 1fr)' : 'repeat(2, 1fr)',
+    gap: '20px',
+    width: '100%',
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    padding: '20px',
+    boxSizing: 'border-box'
   });
   
-  return $gridContainer;
-}
+  // Add navigation items
+  NAV_ITEMS.forEach(item => {
+    const $box = $("<a></a>")
+      .attr('href', item.url)
+      .css({
+        backgroundColor: '#f5f5f7',
+        borderRadius: '12px',
+        padding: '20px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textDecoration: 'none',
+        color: '#333',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+        transition: 'all 0.3s ease',
+        height: '180px',
+        cursor: 'pointer'
+      })
+      .hover(
+        function(this: HTMLElement) { 
+          $(this).css({
+            transform: 'translateY(-5px)',
+            boxShadow: '0 10px 15px rgba(0, 0, 0, 0.1)'
+          }); 
+        },
+        function(this: HTMLElement) { 
+          $(this).css({
+            transform: '',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }); 
+        }
+      );
 
-function createNavigationItem(item: { icon: string, text: string, url: string }) {
-  const $box = $("<a></a>")
-    .attr('href', item.url)
-    .css(NAV_ITEM_STYLES.base)
-    .hover(
-      function(this: any) { 
-        $(this).css(NAV_ITEM_STYLES.hover); 
-      },
-      function(this: any) { 
-        $(this).css({
-          transform: '',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-        }); 
-      }
-    );
+    const $icon = $(item.icon).css({
+      marginBottom: '15px',
+      color: '#555',
+      width: '48px',
+      height: '48px'
+    });
+    
+    const $text = $("<div class='nav-text'></div>")
+      .text(item.text)
+      .css({
+        textAlign: 'center',
+        fontWeight: 'bold'
+      });
 
-  const $icon = $(item.icon).css(NAV_ITEM_STYLES.icon);
+    $box.append($icon).append($text);
+    $normalNav.append($box);
+  });
   
-  const $text = $("<div class='nav-text'></div>")
-    .text(item.text)
-    .css(NAV_ITEM_STYLES.text);
-
-  return $box.append($icon).append($text);
+  // Handle responsive layout
+  $(window).on('resize', function() {
+    if (window.matchMedia(`(min-width: ${MOBILE_BREAKPOINT})`).matches) {
+      // Desktop: 3 columns
+      $normalNav.css('gridTemplateColumns', 'repeat(3, 1fr)');
+    } else {
+      // Mobile: 2 columns
+      $normalNav.css('gridTemplateColumns', 'repeat(2, 1fr)');
+    }
+  });
+  
+  return $normalNav;
 }
 
-function setupScrollBehavior($welcomeMessage: JQuery, $gridContainer: JQuery) {
-  // Initialize ScrollMagic controller
+// Create the sticky navigation bar
+function createStickyNavigation() {
+  // Get header height
+  const headerHeight = getHeaderHeight();
+  
+  // Create container
+  const $stickyNav = $("<div id='sticky-nav'></div>").css({
+    position: 'fixed',
+    top: headerHeight + 'px',
+    left: '0',
+    width: '100%',
+    backgroundColor: 'white',
+    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+    zIndex: 100,
+    display: 'none',
+    padding: '8px 20px',
+    boxSizing: 'border-box'
+  });
+  
+  // Create the row container
+  const $rowContainer = $("<div class='sticky-row'></div>").css({
+    display: 'grid',
+    gridTemplateColumns: `repeat(${NAV_ITEMS.length}, 1fr)`,
+    gap: '8px',
+    maxWidth: '1200px',
+    margin: '0 auto'
+  });
+  
+  // Add navigation items
+  NAV_ITEMS.forEach(item => {
+    const $box = $("<a></a>")
+      .attr('href', item.url)
+      .css({
+        backgroundColor: '#f5f5f7',
+        borderRadius: '8px',
+        padding: '8px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textDecoration: 'none',
+        color: '#333',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        height: '48px',
+        cursor: 'pointer'
+      })
+      .hover(
+        function(this: HTMLElement) { 
+          $(this).css({
+            backgroundColor: '#efeff2',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
+          }); 
+        },
+        function(this: HTMLElement) { 
+          $(this).css({
+            backgroundColor: '#f5f5f7',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+          }); 
+        }
+      );
+
+    // Create smaller icon
+    const $icon = $(item.icon)
+      .css({
+        width: '32px',
+        height: '32px',
+        color: '#555'
+      });
+
+    $box.append($icon);
+    $rowContainer.append($box);
+  });
+  
+  $stickyNav.append($rowContainer);
+  
+  // Update position on resize
+  $(window).on('resize', function() {
+    const newHeaderHeight = getHeaderHeight();
+    $stickyNav.css('top', newHeaderHeight + 'px');
+    
+    // Adjust for mobile
+    if (window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT})`).matches) {
+      $rowContainer.find('a').css('padding', '4px');
+      $rowContainer.css('gap', '4px');
+      $stickyNav.css('padding', '8px 10px');
+    } else {
+      $rowContainer.find('a').css('padding', '8px');
+      $rowContainer.css('gap', '8px');
+      $stickyNav.css('padding', '8px 20px');
+    }
+  });
+  
+  return $stickyNav;
+}
+
+// Add styles for both navigations
+function addNavStyles() {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = `
+    #sticky-nav {
+      opacity: 0;
+      transform: translateY(-100%);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    
+    #sticky-nav.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    @media (max-width: ${MOBILE_BREAKPOINT}) {
+      #sticky-nav .sticky-row {
+        gap: 4px;
+      }
+      
+      #sticky-nav .sticky-row a {
+        padding: 4px;
+      }
+    }
+  `;
+  document.head.appendChild(styleElement);
+}
+
+// Initialize ScrollMagic controller and scenes
+function initScrollBehavior($welcomeMessage: JQuery, $normalNav: JQuery, $stickyNav: JQuery) {
+  // Initialize ScrollMagic
   const controller = new ScrollMagic.Controller();
   
-  // Scene for welcome message fade effect
+  // Welcome message fade scene
   new ScrollMagic.Scene({
-    triggerElement: "#welcome-message",
+    triggerElement: '#welcome-message',
     duration: 150,
     offset: 50
   })
-    .on("progress", function(event: any) {
-      const opacity = Math.max(0, 1 - event.progress);
-      $welcomeMessage.css('opacity', opacity);
-    })
-    .addTo(controller);
-  
-  // Scene for grid sticky behavior
-  let isSticky = false;
-  
-  // Ensure the grid starts in normal mode
-  revertGridToNormal($gridContainer);
-  
-  // Create sticky scene with proper trigger point
-  const gridScene = new ScrollMagic.Scene({
-    triggerElement: "#grid-container",
-    triggerHook: 0.9,  // Trigger when 90% down the viewport (closer to bottom)
-    offset: $gridContainer.outerHeight() / 2 // Offset by half the grid height
+  .on("progress", function(event: any) {
+    const opacity = Math.max(0, 1 - event.progress);
+    $welcomeMessage.css('opacity', opacity);
   })
-    .on("start", function(event: any) {
-      if (event.scrollDirection === "FORWARD" && !isSticky) {
-        isSticky = true;
-        makeGridSticky($gridContainer);
-      } else if (event.scrollDirection === "REVERSE" && isSticky) {
-        isSticky = false;
-        revertGridToNormal($gridContainer);
-      }
-    })
-    .addTo(controller);
+  .addTo(controller);
   
-  // Handle window resize events
+  // Calculate trigger point - when normal nav would scroll out of view
+  const triggerOffset = $normalNav.offset()?.top || 0;
+  const headerHeight = getHeaderHeight();
+  
+  // Show/hide sticky navigation
+  new ScrollMagic.Scene({
+    triggerElement: '#normal-nav',
+    triggerHook: 0,
+    offset: -headerHeight // Account for fixed header
+  })
+  .on('enter', function() {
+    console.log('Showing sticky navigation');
+    $stickyNav.show().addClass('visible');
+  })
+  .on('leave', function() {
+    console.log('Hiding sticky navigation');
+    $stickyNav.removeClass('visible');
+    setTimeout(function() {
+      if (!$stickyNav.hasClass('visible')) {
+        $stickyNav.hide();
+      }
+    }, 300); // Match transition duration
+  })
+  .addTo(controller);
+  
+  // Update on resize
   $(window).on('resize', function() {
-    // Update grid layout based on screen size
-    if (!isSticky) {
-      updateGridLayout($gridContainer);
-    }
-    
-    // Update scene offset on resize
-    gridScene.offset($gridContainer.outerHeight() / 2);
-    
-    // Update ScrollMagic scenes
     controller.update(true);
   });
-  
-  // Initial grid layout setup
-  updateGridLayout($gridContainer);
-  
-  // Refresh ScrollMagic on document ready to ensure proper initialization
-  $(document).ready(function() {
-    setTimeout(function() {
-      controller.update(true);
-    }, 200);
-  });
 }
 
-function updateGridLayout($gridContainer: JQuery) {
-  if (window.matchMedia(`(min-width: ${MOBILE_BREAKPOINT})`).matches) {
-    // Desktop: 3 columns
-    $gridContainer.css('gridTemplateColumns', 'repeat(3, 1fr)');
-  } else {
-    // Mobile: 2 columns
-    $gridContainer.css('gridTemplateColumns', 'repeat(2, 1fr)');
-  }
-}
-
-function makeGridSticky($gridContainer: JQuery) {
-  // Determine if we're on mobile or desktop
+// Get header height based on screen size
+function getHeaderHeight(): number {
   const isMobile = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT})`).matches;
-  const headerHeight = isMobile ? HEADER_HEIGHTS.mobile : HEADER_HEIGHTS.desktop;
+  const headerHeight = isMobile ? 
+    parseInt(HEADER_HEIGHTS.mobile) : 
+    parseInt(HEADER_HEIGHTS.desktop);
   
-  $gridContainer.css({
-    ...STICKY_GRID_STYLES,
-    top: headerHeight,
-    left: '0',
-    width: '100%',
-    maxWidth: '100%',
-    gridTemplateColumns: `repeat(${NAV_ITEMS.length}, 1fr)`, // Always 1 row of 6 items
-    gap: '8px',
-    padding: '8px 20px'
-  });
-  
-  // Hide text completely and reduce height of nav items
-  $gridContainer.find('.nav-text').hide();
-  $gridContainer.find('a').css({
-    height: '48px',
-    padding: '8px',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    width: '100%'
-  });
-  
-  // Resize and center icons
-  $gridContainer.find('svg').css({
-    width: '24px',
-    height: '24px',
-    margin: '0'
-  });
-}
-
-function revertGridToNormal($gridContainer: JQuery) {
-  $gridContainer.css({
-    position: 'static',
-    top: 'auto',
-    left: 'auto',
-    width: '100%',
-    boxShadow: 'none',
-    gap: '20px',
-    padding: '20px'
-  });
-  
-  // Apply the correct grid layout based on screen size
-  updateGridLayout($gridContainer);
-  
-  // Restore text on buttons
-  $gridContainer.find('.nav-text').show();
-  $gridContainer.find('a').css({
-    height: '180px',
-    padding: '20px',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    width: ''
-  });
-  
-  // Restore icon size
-  $gridContainer.find('svg').css({
-    width: '48px',
-    height: '48px',
-    marginBottom: '15px'
-  });
+  return headerHeight;
 }
